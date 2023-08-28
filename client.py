@@ -26,15 +26,11 @@ client.connect(("localhost",9990))
 client.send(input("Please set a username: ").encode("UTF-8"))
 
 
+# Assigning a thread to the messaging function.
+thread1 = threading.Thread(target=listen)
 
-try:
-    # Assigning a thread to the messaging function.
-    thread1 = threading.Thread(target=send_message)
-    # Assigning a thread to the listening function.
-    thread2 = threading.Thread(target=listen)
+# Starting the listening thread
+thread1.start()
 
-    # Starting the threads
-    thread1.start()
-    thread2.start()
-except KeyboardInterrupt:
-    print("Exiting...")
+while True:
+    send_message()
