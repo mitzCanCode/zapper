@@ -1,57 +1,49 @@
 import socket
 import threading
 import json
+import sys
 
+def send_message(receiver, sender, message):
+    message = json.dumps({"user": sender, "message": message})
+    receiver.send(message.encode("UTF-8"))
 
-# def send_message(sender, reciever):
-#     while True:
-        
-#         client.send(message.encode("UTF-8"))
+def handle_client(client, users):
+    while True:
+        try:
+            message = client.recv(1024).decode("UTF-8")
+            if message:
+                print(f"{users[client]}: {message}")
 
-def listen(client):
-    # while True:
-    #     message = .recv(1024)
-    #     print(message.decode("UTF-8"))
-    pass
+                # Broadcasting the message to the connected clients
+                for other_client in users.keys():
+                    if other_client != client:
+                        send_message(other_client, users[client], message)
+        except ConnectionResetError:
+            # In the case of a disconnection a message is sent notygi=ying the other user and the user that exited is deleted from the user dictionary
+            print(f"{users[client]} has disconnected.")
+            del users[client]
+            break
 
-
-# Making the sever a TCP server.
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-# Assigning the server port and ip.
-server.bind(("localhost",9990))
-
-# Starting the server
+server.bind(("localhost", 9990))
 server.listen()
 
-# Accepting the first user
-client1, address1 = server.accept()
-# Sending the user an update from the server stating the status of the active users.
-client1.send(json.dumps({"user":"server", "message":"Client1 joined. Waiting for second connection..."}).encode("UTF-8"))
-
-# Setting the user name for user one
-nickname1 = client1.recv(1024).decode("UTF-8")
-# Printing to the server console
-print(nickname1)
-
-client2, address2 = server.accept()
-# Setting the user name for user two
-nickname2 = client2.recv(1024).decode("UTF-8")
-print(nickname2)
-# Sending the user an update from the server stating the status of the active users.
-client1.send(json.dumps({"user":"server", "message":"Both users connected communication can start!"}).encode("UTF-8"))
-# Sending the user an update from the server stating the status of the active users.
-client2.send(json.dumps({"user":"server", "message":"Both users connected communication can start!"}).encode("UTF-8"))
-
-
+users = {}  # Dictionary to store clients and their usernames
 
 try:
     while True:
-        # Printing to the server console the messages sent
-        print(client1.recv(1024).decode("UTF-8"))
-        print(client2.recv(1024).decode("UTF-8"))
+        client, address = server.accept()
+        nickname = client.recv(1024).decode("UTF-8")
+        print(f"{nickname} connected from {address}")
+        users[client] = nickname
+        client.send(json.dumps({"user": "server", "message": "You are now connected!"}).encode("UTF-8"))
+
+        # Starting a new thread to handle this client.
+        client_thread = threading.Thread(target=handle_client, args=(client, users))
+        client_thread.start()
+
 except KeyboardInterrupt:
-    # If the server is quit by the user the server socket is closed
+    # If the server is quit by the user, close the server socket
     server.close()
-    print("Exiting...")
-    
+    print("Server is shutting down.")
+    sys.exit()
