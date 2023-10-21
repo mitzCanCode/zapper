@@ -21,16 +21,31 @@ def listen():
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # Connecting to the server
-client.connect(("localhost",9990))
+client.connect(("localhost", 9996))
 # Asking the user for a user name to be used in the chat.
 client.send(input("Please set a username: ").encode("UTF-8"))
 
 
-# Assigning a thread to the messaging function.
-thread1 = threading.Thread(target=listen)
+# # Assigning a thread to the messaging function.
+# thread1 = threading.Thread(target=listen)
+# # thread2 = threading.Thread(target=temp)
 
-# Starting the listening thread
-thread1.start()
+# # Starting the listening thread
+# thread1.start()
+# while True:
+#     send_message()
 
-while True:
-    send_message()
+
+
+
+try:
+    # Assigning a thread to the messaging function.
+    thread1 = threading.Thread(target=send_message)
+    # Assigning a thread to the listening function.
+    thread2 = threading.Thread(target=listen)
+
+    # Starting the listening thread
+    thread1.start()
+    thread2.start()
+except KeyboardInterrupt:
+    print("Exiting...")
